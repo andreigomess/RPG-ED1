@@ -1,25 +1,40 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "game.h"
+#include "inventory.h"
 
-int main(void) {
-    Game *g = game_create();
-    if (!g) {
-        fprintf(stderr, "Falha ao inicializar jogo\n");
-        return 1;
-    }
+int main() {
+    printf("Iniciando o sistema de inventario...\n\n");
 
-    printf("Herói em Loop - implementação inicial\n");
-    printf("Comandos: 'q' quit, 'i' inventário (press Enter)\n");
+    // 1. Criamos a mochila (Lista inicia apontando para NULL)
+    Inventario* minhaMochila = inicializarInventario();
 
-    while (g->running) {
-        game_input(g);
-        game_update(g);
-        game_render(g);
-    }
+    // 2. Criamos alguns itens para o teste
+    // Usamos o formato: {"Nome", Tipo, Valor do Atributo}
+    Item espada = {"Espada de Ferro", ARMA, 15};
+    Item armadura = {"Cota de Malha", ARMADURA, 25};
+    Item pocao = {"Pocao de Vida", CONSUMIVEL, 50};
 
-    printf("Encerrando jogo. Liberando recursos...\n");
-    game_destroy(g);
+    // 3. Adicionamos os itens na mochila
+    // Como a inserção é no início, o último a entrar será o primeiro da lista
+    adicionarItem(minhaMochila, espada);
+    adicionarItem(minhaMochila, armadura);
+    adicionarItem(minhaMochila, pocao);
+
+    // 4. Exibimos a mochila cheia
+    exibirInventario(minhaMochila);
+
+    // 5. Simulamos o uso/descarte de um item
+    printf("O heroi decidiu beber a pocao e descartar o frasco...\n");
+    
+    // Aqui a mágica do 'free()' acontece!
+    descartarItem(minhaMochila, "Pocao de Vida");
+
+    // 6. Exibimos a mochila atualizada para confirmar a remoção
+    exibirInventario(minhaMochila);
+
+    // Tentamos descartar um item que não existe para testar a segurança
+    descartarItem(minhaMochila, "Escudo de Madeira");
+
+    printf("\nFim do teste de inventario.\n");
     return 0;
 }
-
