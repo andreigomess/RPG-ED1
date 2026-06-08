@@ -109,6 +109,16 @@ void processarInput(EstadoJogo* jogo) {
 void atualizarLogica(EstadoJogo* jogo) {
     // Isolamos o bloco onde o herói está pisando agora para facilitar a leitura
     NoMapa* blocoAtual = jogo->heroi->posicaoAtual;
+
+    if (blocoAtual == jogo->mapa->sentinela) {
+        printf("\n[+] VOCE VOLTOU AO ACAMPAMENTO!\n");
+        printf("[+] O calor da fogueira restaura suas feridas.\n");
+        
+        // Cura o herói completamente
+        jogo->heroi->vidaAtual = jogo->heroi->vidaMaxima; 
+        
+        // (Opcional) Podemos aumentar a dificuldade do jogo a cada volta aqui no futuro!
+    }
     
     // 1. Verificamos se há um inimigo gerado neste terreno
     // (No seu map.h, o idInimigo = 0 significa que está seguro)
@@ -123,121 +133,258 @@ void atualizarLogica(EstadoJogo* jogo) {
         int venceu = iniciarCombate(jogo->heroi, monstroSorteado);
         
         if (venceu == 1) {
-            printf(">> Voce limpou a area! O bloco agora esta seguro.\n");
-            blocoAtual->idInimigo = 0; 
-            
-            // --- INÍCIO DO SISTEMA DE DROP ---
-            printf("\n[!] O monstro deixou algo cair!\n");
-            
-            int sorteioDrop = rand() % 3;
-            Item novoItem; 
-            
-            // 1. Criamos o item respeitando o Enum e o valorAtributo
-            if (sorteioDrop == 0) {
-                strcpy(novoItem.nome, "Espada Enferrujada");
-                novoItem.tipo = ARMA; // Usa o Enum!
-                novoItem.valorAtributo = 3;
-            } else if (sorteioDrop == 1) {
-                strcpy(novoItem.nome, "Escudo de Madeira");
-                novoItem.tipo = ESCUDO; // Usa o Enum!
-                novoItem.valorAtributo = 15;
+                // --- INÍCIO DA TELA DE RECOMPENSAS ---
+                printf("\n====================================\n");
+                printf("       VITORIA! RECOMPENSAS         \n");
+                printf("====================================\n");
+                
+                // --- 1. DROP DE ITEM ---
+                int sorteioItem = rand() % 3;
+                Item novoItem; 
+                
+                if (sorteioItem == 0) {
+                    strcpy(novoItem.nome, "Espada Enferrujada");
+                    novoItem.tipo = ARMA; 
+                    novoItem.valorAtributo = 3;
+                } else if (sorteioItem == 1) {
+                    strcpy(novoItem.nome, "Escudo de Madeira");
+                    novoItem.tipo = ESCUDO; 
+                    novoItem.valorAtributo = 15;
+                } else {
+                    strcpy(novoItem.nome, "Anel da Vitalidade");
+                    novoItem.tipo = ANEL; 
+                    novoItem.valorAtributo = 5;
+                }
+                
+                adicionarItem(jogo->mochila, novoItem);
+                
+                printf("[ITEM] %s adicionado a mochila!\n", novoItem.nome);
+                if (novoItem.tipo == ARMA) {
+                    jogo->heroi->poderAtaque += novoItem.valorAtributo;
+                    printf("       -> Efeito: ATQ +%d\n", novoItem.valorAtributo);
+                } else {
+                    jogo->heroi->vidaMaxima += novoItem.valorAtributo;
+                    jogo->heroi->vidaAtual += novoItem.valorAtributo; 
+                    printf("       -> Efeito: HP MAX +%d\n", novoItem.valorAtributo);
+                }
+
+                printf("------------------------------------\n");
+
+                // --- 2. DROP DE CARTA ---
+                int sorteioCarta = rand() % 2; 
+                Carta novaCarta;
+                
+                if (sorteioCarta == 0) {
+                    strcpy(novaCarta.nome, "Floresta");
+                    novaCarta.idTerreno = 2;
+                    novaCarta.idInimigoGera = 0; 
+                    novaCarta.curaVida = 0;
+                } else {
+                    strcpy(novaCarta.nome, "Pantano");
+                    novaCarta.idTerreno = 3;
+                    novaCarta.idInimigoGera = 0;
+                    novaCarta.curaVida = 0;
+                }
+                
+                // O empilharCarta já vai imprimir ">> Você ganhou a carta..."
+                empilharCarta(jogo->baralho, novaCarta);
+                printf("====================================\n");
+                // --- FIM DA TELA DE RECOMPENSAS ---
+                
             } else {
-                strcpy(novoItem.nome, "Anel da Vitalidade");
-                novoItem.tipo = ANEL; // Usa o Enum!
-                novoItem.valorAtributo = 5;
-            }
-            
-            // 2. Guarda na mochila (Lista Simples Encadeada)
-            adicionarItem(jogo->mochila, novoItem);
-            
-            // 3. Aplica o buff no herói dependendo do TIPO do item
-            if (novoItem.tipo == ARMA) {
-                jogo->heroi->poderAtaque += novoItem.valorAtributo;
-                printf(">> '%s' equipado! ATQ +%d\n", novoItem.nome, novoItem.valorAtributo);
-            } 
-            else if (novoItem.tipo == ESCUDO || novoItem.tipo == ANEL || novoItem.tipo == ARMADURA) {
-                jogo->heroi->vidaMaxima += novoItem.valorAtributo;
-                jogo->heroi->vidaAtual += novoItem.valorAtributo; // Cura o HP extra ganho
-                printf(">> '%s' equipado! HP MAX +%d\n", novoItem.nome, novoItem.valorAtributo);
-            }
-
-            Carta novaCartaDropada;
-            strcpy(novaCartaDropada.nome, "Carta de Bosque");
-            novaCartaDropada.idTerreno = 3;      // ID do Bosque no cenário
-            novaCartaDropada.idInimigoGera = 0;   // Não gera inimigos por enquanto
-            novaCartaDropada.curaVida = 0;
-
-            // Coloca a carta direto no topo do baralho do jogador!
-            empilharCarta(jogo->baralho, novaCartaDropada);
-            // --- FIM DO SISTEMA DE DROP ---
-            
-        } else {
-            printf(">> Sua jornada termina aqui...\n");
-            jogo->jogoRodando = 0; 
-            return;
-        }
-    }
-    
-    // 2. NOVO: Encontro Aleatório no caminho vazio!
-    else if (blocoAtual->tipoTerreno == 1) { // 1 = Caminho padrão
-        
-        // Sorteia um número de 0 a 99 (Simula uma chance de 20%)
-        int chance = rand() % 100; 
-        
-        if (chance < 20) {
-            limparTela();
-            printf("\n[!] UM INIMIGO SURGIU DAS SOMBRAS!\n");
-            
-            // Criamos o monstro padrão na hora
-            Inimigo monstroPadrao = {"Slime do Caminho", 20, 20, 4};
-            
-            // O herói luta com ele imediatamente!
-            int venceu = iniciarCombate(jogo->heroi, monstroPadrao);
-            
-            if (venceu == 0) {
                 printf(">> Sua jornada termina aqui...\n");
                 jogo->jogoRodando = 0; 
+                return;
+            }
+    }
+    
+    // =======================================================
+    // PARTE 2: Encontros Aleatórios (Slime) + Drops!
+    // =======================================================
+    else if (blocoAtual->tipoTerreno == 1) { 
+        
+        // 20% de chance de achar um Slime
+        if (rand() % 100 < 20) {
+            printf("\n[!] UM SLIME SURGIU DAS SOMBRAS!\n");
+            Inimigo monstroPadrao = {"Slime do Caminho", 20, 20, 4};
+            
+            int venceu = iniciarCombate(jogo->heroi, monstroPadrao);
+            
+            if (venceu == 1) {
+                // --- INÍCIO DA TELA DE RECOMPENSAS ---
+                printf("\n====================================\n");
+                printf("       VITORIA! RECOMPENSAS         \n");
+                printf("====================================\n");
+                
+                // --- 1. DROP DE ITEM ---
+                int sorteioItem = rand() % 3;
+                Item novoItem; 
+                
+                if (sorteioItem == 0) {
+                    strcpy(novoItem.nome, "Espada Enferrujada");
+                    novoItem.tipo = ARMA; 
+                    novoItem.valorAtributo = 3;
+                } else if (sorteioItem == 1) {
+                    strcpy(novoItem.nome, "Escudo de Madeira");
+                    novoItem.tipo = ESCUDO; 
+                    novoItem.valorAtributo = 15;
+                } else {
+                    strcpy(novoItem.nome, "Anel da Vitalidade");
+                    novoItem.tipo = ANEL; 
+                    novoItem.valorAtributo = 5;
+                }
+                
+                adicionarItem(jogo->mochila, novoItem);
+                
+                printf("[ITEM] %s adicionado a mochila!\n", novoItem.nome);
+                if (novoItem.tipo == ARMA) {
+                    jogo->heroi->poderAtaque += novoItem.valorAtributo;
+                    printf("       -> Efeito: ATQ +%d\n", novoItem.valorAtributo);
+                } else {
+                    jogo->heroi->vidaMaxima += novoItem.valorAtributo;
+                    jogo->heroi->vidaAtual += novoItem.valorAtributo; 
+                    printf("       -> Efeito: HP MAX +%d\n", novoItem.valorAtributo);
+                }
+
+                printf("------------------------------------\n");
+
+                // --- 2. DROP DE CARTA ---
+                int sorteioCarta = rand() % 2; 
+                Carta novaCarta;
+                
+                if (sorteioCarta == 0) {
+                    strcpy(novaCarta.nome, "Floresta");
+                    novaCarta.idTerreno = 2;
+                    novaCarta.idInimigoGera = 0; 
+                    novaCarta.curaVida = 0;
+                } else {
+                    strcpy(novaCarta.nome, "Pantano");
+                    novaCarta.idTerreno = 3;
+                    novaCarta.idInimigoGera = 0;
+                    novaCarta.curaVida = 0;
+                }
+                
+                // O empilharCarta já vai imprimir ">> Você ganhou a carta..."
+                empilharCarta(jogo->baralho, novaCarta);
+                printf("====================================\n");
+                // --- FIM DA TELA DE RECOMPENSAS ---
+                
+            } else {
+                printf(">> Sua jornada termina aqui...\n");
+                jogo->jogoRodando = 0; 
+                return;
             }
         }
     }
+
+    // --- INÍCIO DO ESCANEAMENTO DE VIZINHOS ---
+    int hLinha = blocoAtual->linhaVisual;
+    int hColuna = blocoAtual->colunaVisual;
+    
+    // Arrays auxiliares para representar: Cima, Baixo, Esquerda, Direita na Matriz
+    int deslocamentoLinha[4] = {-1, 1, 0, 0};
+    int deslocamentoColuna[4] = {0, 0, -1, 1};
+    
+    // O herói olha para as 4 direções ao redor do bloco onde acabou de pisar
+    for (int i = 0; i < 4; i++) {
+        int vizinhoLinha = hLinha + deslocamentoLinha[i];
+        int vizinhoColuna = hColuna + deslocamentoColuna[i];
+        
+        // Garante que não vamos tentar olhar para fora do mapa
+        if (vizinhoLinha >= 0 && vizinhoLinha < LINHAS && 
+            vizinhoColuna >= 0 && vizinhoColuna < COLUNAS) {
+            
+            // Pega o ID da estrutura que está nesse bloco vizinho
+            int idTerrenoVizinho = jogo->cenario->grade[vizinhoLinha][vizinhoColuna];
+            
+            // --- EFEITOS DOS TERRENOS ---
+            
+            // 1. FLORESTA (ID 2)
+            if (idTerrenoVizinho == 2) {
+                // Sorteia uma chance de 25% de gerar um Lobo
+                if (rand() % 100 < 25) {
+                    printf("\n[!] Um Lobo feroz saltou da Floresta vizinha!\n");
+                    
+                    // Inimigo gerado on-the-fly
+                    Inimigo lobo = {"Lobo da Floresta", 25, 25, 5};
+                    
+                    int venceu = iniciarCombate(jogo->heroi, lobo);
+                    if (venceu == 0) {
+                        printf(">> Voce foi devorado. Sua jornada termina aqui...\n");
+                        jogo->jogoRodando = 0;
+                        return; // Sai da função imediatamente
+                    }
+                }
+            }
+            
+            // 2. PÂNTANO (ID 3)
+            else if (idTerrenoVizinho == 3) {
+                printf("\n[!] O ar pesado do Pantano vizinho sufoca voce... (-2 HP)\n");
+                jogo->heroi->vidaAtual -= 2;
+                
+                // Verifica se o dano passivo matou o herói
+                if (jogo->heroi->vidaAtual <= 0) {
+                    printf(">> Voce sucumbiu aos gases toxicos. Sua jornada termina aqui...\n");
+                    jogo->jogoRodando = 0;
+                    return; // Sai da função
+                }
+            }
+        }
+    }
+    // --- FIM DO ESCANEAMENTO DE VIZINHOS ---
 }
 
 
 
 
 void renderizarTela(EstadoJogo* jogo) {
-    // 1. Apaga tudo o que aconteceu no turno passado
+    // 1. Apaga o turno passado
     limparTela();
     
     printf("==================================================\n");
-    printf("                 Dark Healm - C                    \n");
-    printf("==================================================\n\n");
+    printf("                  LOOP HERO - C                   \n");
+    printf("==================================================\n");
     
-    // 2. Status do Herói
-    printf("--- STATUS ---\n");
-    printf("Aventureiro: %s\n", jogo->heroi->nome);
-    printf("Vida: %d / %d | Ataque: %d\n", 
-           jogo->heroi->vidaAtual, jogo->heroi->vidaMaxima, jogo->heroi->poderAtaque);
-    printf("--------------\n\n");
+    // 2. Painel de Status com Barra de Vida
+    printf(" [ STATUS DO AVENTUREIRO ]\n");
+    printf(" Nome:   %s\n", jogo->heroi->nome);
     
-    // 3. Informações do Local Atual
+    printf(" Vida:   [");
+    // Calcula quantos blocos a barra deve ter (de 0 a 10)
+    int blocosVida = (jogo->heroi->vidaAtual * 10) / jogo->heroi->vidaMaxima;
+    for(int i = 0; i < 10; i++) {
+        if(i < blocosVida) {
+            printf("#"); // Parte cheia da vida
+        } else {
+            printf("-"); // Parte vazia da vida
+        }
+    }
+    printf("] %d/%d\n", jogo->heroi->vidaAtual, jogo->heroi->vidaMaxima);
+    
+    printf(" Ataque: %d\n", jogo->heroi->poderAtaque);
+    printf("==================================================\n");
+    
+    // 3. Painel do Local Atual
     NoMapa* local = jogo->heroi->posicaoAtual;
-    printf("--- LOCAL ATUAL ---\n");
-    printf("Terreno ID: %d | Estrutura ID: %d | Evento ID: %d\n", 
-           local->tipoTerreno, local->idEstrutura, local->idEvento);
+    printf(" [ LOCAL ATUAL ]\n");
+    
+    // Traduz o ID do terreno para um nome amigável
+    if (local == jogo->mapa->sentinela) {
+        printf(" Terreno: Acampamento (Marco Zero)\n");
+    } else {
+        printf(" Terreno: Caminho Padrao\n");
+    }
     
     if (local->idInimigo == 0) {
-        printf("Status: A area parece segura.\n");
+        printf(" Alerta:  A area parece segura.\n");
     } else {
-        printf("Status: ALERTA! Presenca inimiga detectada!\n");
+        printf(" Alerta:  PRESENCA INIMIGA!\n");
     }
-    printf("-------------------\n\n");
+    printf("==================================================\n");
     
-
+    // 4. Desenha a matriz do mapa por baixo de tudo
     int hLinha = jogo->heroi->posicaoAtual->linhaVisual;
     int hColuna = jogo->heroi->posicaoAtual->colunaVisual;
-    
-    // Manda desenhar a matriz com o herói por cima!
     exibirCenario(jogo->cenario, hLinha, hColuna);
 }
 
