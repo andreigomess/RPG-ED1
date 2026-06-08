@@ -8,6 +8,8 @@ typedef struct NoMapa {
     int idInimigo;       // Ex: 0 para nenhum, 1 para Slime, etc.
     int idEstrutura;     // Modificações aplicadas por cartas
     int idEvento;        // Eventos especiais no bloco
+    int linhaVisual;
+    int colunaVisual;
     
     // Ponteiro fundamental: aponta para o próximo bloco do caminho
     struct NoMapa* proximo; 

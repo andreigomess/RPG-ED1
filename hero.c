@@ -7,6 +7,8 @@
  * Função: inicializarHeroi
  * Objetivo: Criar o herói e colocá-lo no início do mapa.
  */
+
+
 Heroi* inicializarHeroi(MapaCircular* mapa) {
     Heroi* novoHeroi = (Heroi*) malloc(sizeof(Heroi));
     
@@ -18,6 +20,7 @@ Heroi* inicializarHeroi(MapaCircular* mapa) {
     strcpy(novoHeroi->nome, "Viajante Esquecido");
     novoHeroi->vidaMaxima = 100;
     novoHeroi->vidaAtual = 100;
+    novoHeroi->poderAtaque = 12;
 
     // Colocamos o herói no primeiro bloco de verdade (logo após a sentinela)
     novoHeroi->posicaoAtual = mapa->sentinela->proximo;

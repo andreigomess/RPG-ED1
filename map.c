@@ -6,38 +6,62 @@
  * Função: inicializarMapa
  * Objetivo: Criar a estrutura do mapa e configurar o nó Sentinela.
  */
+#include <stdio.h>
+#include <stdlib.h>
+#include "map.h"
+
+/*
+ * Função: inicializarMapa
+ * Objetivo: Construir uma Lista Circular de 16 nós sincronizada com o desenho da matriz.
+ */
 MapaCircular* inicializarMapa() {
-    // 1. Alocamos memória para a estrutura gerenciadora do mapa
     MapaCircular* mapa = (MapaCircular*) malloc(sizeof(MapaCircular));
-    
-    // Verificação de segurança: checar se a memória foi alocada corretamente
     if (mapa == NULL) {
-        printf("Erro de alocação de memória para o mapa!\n");
+        printf("Erro crítico: Falha ao alocar o gerenciador do mapa!\n");
         exit(1);
     }
 
-    // 2. Alocamos memória para o nó Sentinela
-    NoMapa* sentinela = (NoMapa*) malloc(sizeof(NoMapa));
-    
-    if (sentinela == NULL) {
-        printf("Erro de alocação de memória para a sentinela!\n");
-        exit(1);
+    // Coordenadas exatas que formam um circuito quadrado oco (sentido horário)
+    // Começa em (1,1), vai até (1,5), desce até (5,5), volta até (5,1) e sobe até (2,1)
+    int linhasPista[16]  = {1, 1, 1, 1, 1, 2, 3, 4, 5, 5, 5, 5, 5, 4, 3, 2};
+    int colunasPista[16] = {1, 2, 3, 4, 5, 5, 5, 5, 5, 4, 3, 2, 1, 1, 1, 1};
+
+    NoMapa* primeiroNo = NULL;
+    NoMapa* noAnterior = NULL;
+
+    // Criamos exatamente os 16 nós da nossa pista
+    for (int i = 0; i < 16; i++) {
+        NoMapa* novoNo = (NoMapa*) malloc(sizeof(NoMapa));
+        if (novoNo == NULL) {
+            printf("Erro ao alocar o bloco %d do mapa!\n", i);
+            exit(1);
+        }
+
+        // Inicializamos os dados padrão do bloco
+        novoNo->tipoTerreno = 1;  // 1 = Caminho padrão
+        novoNo->idInimigo = 0;    // Começa sem monstros fixos
+        novoNo->idEstrutura = 0;  // Sem cartas jogadas ainda
+        novoNo->idEvento = 0;
+
+        // Injetamos o "GPS" visual sincronizado com a matriz!
+        novoNo->linhaVisual = linhasPista[i];
+        novoNo->colunaVisual = colunasPista[i];
+
+        // Encadeamento lógico da lista
+        if (primeiroNo == NULL) {
+            primeiroNo = novoNo; // Guarda o início para fechar o círculo depois
+        } else {
+            noAnterior->proximo = novoNo; // O anterior aponta para o novo
+        }
+        noAnterior = novoNo;
     }
 
-    // 3. Inicializamos os valores do nó Sentinela (ele é vazio por padrão)
-    sentinela->tipoTerreno = 0; // Terreno inicial (ex: Acampamento)
-    sentinela->idInimigo = 0;
-    sentinela->idEstrutura = 0;
-    sentinela->idEvento = 0;
+    // A grande magia da Lista Circular: o 16º nó aponta de volta para o 1º!
+    noAnterior->proximo = primeiroNo;
 
-    // 4. A MAGIA DA LISTA CIRCULAR: A sentinela aponta para ela mesma!
-    // Como não há outros blocos ainda, o "próximo" passo após a sentinela é a própria sentinela.
-    sentinela->proximo = sentinela;
+    // O nosso gerenciador guarda o primeiro nó como o "marco zero" (Sentinela)
+    mapa->sentinela = primeiroNo;
 
-    // Conectamos a sentinela ao mapa
-    mapa->sentinela = sentinela;
-
-    // Retornamos o mapa pronto para ser usado
     return mapa;
 }
 

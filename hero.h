@@ -8,6 +8,7 @@ typedef struct {
     char nome[30];
     int vidaMaxima;
     int vidaAtual;
+    int poderAtaque;
     
     // Ponteiro crucial: guarda a posição exata do herói na Lista Circular
     NoMapa* posicaoAtual; 
