@@ -1,6 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
-
+#include <string.h>
 #include "hero.h"
 #include "map.h"
 #include "inventory.h"

@@ -9,8 +9,6 @@
  */
 
  void limparTela() {
-    // Se estivesse no Windows, seria system("cls");
-    // Como você está no Linux/Codespaces, usamos "clear"
     system("clear");
 }
 
@@ -66,8 +64,34 @@ void processarInput(EstadoJogo* jogo) {
             break;
             
         case 3:
-            // Mostra o topo da Pilha
-            exibirTopo(jogo->baralho);
+            printf("\n>> Voce canaliza a magia do seu baralho...\n");
+            
+            // 1. Verificamos se o baralho não está vazio
+            if (jogo->baralho->topo == NULL) {
+                printf("[!] Seu baralho esta vazio! Derrote monstros para conseguir cartas.\n");
+            } else {
+                // 2. Removemos (Pop) a carta do topo da Pilha
+                Carta cartaJogada = desempilharCarta(jogo->baralho);
+                printf("Voce conjurou a carta: '%s'\n", cartaJogada.nome);
+                
+                // 3. Pedimos as coordenadas para o jogador
+                int linhaEscolhida, colunaEscolhida;
+                printf("Onde deseja colocar? Digite a Linha (0 a 6) e Coluna (0 a 6) separadas por espaco: ");
+                scanf("%d %d", &linhaEscolhida, &colunaEscolhida);
+                
+                // 4. Verificamos se as coordenadas são válidas e se o terreno está vazio (0)
+                if (linhaEscolhida >= 0 && linhaEscolhida < LINHAS && 
+                    colunaEscolhida >= 0 && colunaEscolhida < COLUNAS &&
+                    jogo->cenario->grade[linhaEscolhida][colunaEscolhida] == 0) {
+                    
+                    // 5. Colocamos a estrutura no mapa da matriz usando o idTerreno!
+                    colocarEstrutura(jogo->cenario, linhaEscolhida, colunaEscolhida, cartaJogada.idTerreno);
+                    printf(">> A estrutura '%s' emergiu magicamente no cenario!\n", cartaJogada.nome);
+                    
+                } else {
+                    printf(">> Local invalido ou ocupado! A magia falhou e a carta virou poeira...\n");
+                }
+            }
             break;
             
         case 0:
@@ -100,11 +124,57 @@ void atualizarLogica(EstadoJogo* jogo) {
         
         if (venceu == 1) {
             printf(">> Voce limpou a area! O bloco agora esta seguro.\n");
-            blocoAtual->idInimigo = 0; // O inimigo morre, o mapa fica limpo
+            blocoAtual->idInimigo = 0; 
+            
+            // --- INÍCIO DO SISTEMA DE DROP ---
+            printf("\n[!] O monstro deixou algo cair!\n");
+            
+            int sorteioDrop = rand() % 3;
+            Item novoItem; 
+            
+            // 1. Criamos o item respeitando o Enum e o valorAtributo
+            if (sorteioDrop == 0) {
+                strcpy(novoItem.nome, "Espada Enferrujada");
+                novoItem.tipo = ARMA; // Usa o Enum!
+                novoItem.valorAtributo = 3;
+            } else if (sorteioDrop == 1) {
+                strcpy(novoItem.nome, "Escudo de Madeira");
+                novoItem.tipo = ESCUDO; // Usa o Enum!
+                novoItem.valorAtributo = 15;
+            } else {
+                strcpy(novoItem.nome, "Anel da Vitalidade");
+                novoItem.tipo = ANEL; // Usa o Enum!
+                novoItem.valorAtributo = 5;
+            }
+            
+            // 2. Guarda na mochila (Lista Simples Encadeada)
+            adicionarItem(jogo->mochila, novoItem);
+            
+            // 3. Aplica o buff no herói dependendo do TIPO do item
+            if (novoItem.tipo == ARMA) {
+                jogo->heroi->poderAtaque += novoItem.valorAtributo;
+                printf(">> '%s' equipado! ATQ +%d\n", novoItem.nome, novoItem.valorAtributo);
+            } 
+            else if (novoItem.tipo == ESCUDO || novoItem.tipo == ANEL || novoItem.tipo == ARMADURA) {
+                jogo->heroi->vidaMaxima += novoItem.valorAtributo;
+                jogo->heroi->vidaAtual += novoItem.valorAtributo; // Cura o HP extra ganho
+                printf(">> '%s' equipado! HP MAX +%d\n", novoItem.nome, novoItem.valorAtributo);
+            }
+
+            Carta novaCartaDropada;
+            strcpy(novaCartaDropada.nome, "Carta de Bosque");
+            novaCartaDropada.idTerreno = 3;      // ID do Bosque no cenário
+            novaCartaDropada.idInimigoGera = 0;   // Não gera inimigos por enquanto
+            novaCartaDropada.curaVida = 0;
+
+            // Coloca a carta direto no topo do baralho do jogador!
+            empilharCarta(jogo->baralho, novaCartaDropada);
+            // --- FIM DO SISTEMA DE DROP ---
+            
         } else {
             printf(">> Sua jornada termina aqui...\n");
-            jogo->jogoRodando = 0; // Herói morreu, fim de jogo
-            return; // Sai da função imediatamente
+            jogo->jogoRodando = 0; 
+            return;
         }
     }
     
@@ -140,7 +210,7 @@ void renderizarTela(EstadoJogo* jogo) {
     limparTela();
     
     printf("==================================================\n");
-    printf("                 LOOP HERO - C                    \n");
+    printf("                 Dark Healm - C                    \n");
     printf("==================================================\n\n");
     
     // 2. Status do Herói
@@ -163,7 +233,7 @@ void renderizarTela(EstadoJogo* jogo) {
     }
     printf("-------------------\n\n");
     
-    // Extrai as coordenadas do bloco atual do herói
+
     int hLinha = jogo->heroi->posicaoAtual->linhaVisual;
     int hColuna = jogo->heroi->posicaoAtual->colunaVisual;
     

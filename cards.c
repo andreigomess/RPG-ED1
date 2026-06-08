@@ -43,7 +43,7 @@ void empilharCarta(PilhaCartas* pilha, Carta novaCarta) {
     // Agora, o topo oficial da pilha passa a ser a nossa nova carta
     pilha->topo = novoNo;
     
-    printf(">> Você comprou a carta '%s'. Ela esta no topo do baralho!\n", novaCarta.nome);
+    printf(">> Você ganhou a carta '%s'. Ela esta no topo do baralho!\n", novaCarta.nome);
 }
 
 /*
