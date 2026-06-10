@@ -63,9 +63,9 @@ void exibirCenario(MatrizCenario* cenario, int linhaHeroi, int colunaHeroi) {
             
             // Arte ASCII simples traduzindo os números
             if (blocoAtual == 0) {
-                printf("[ ] "); // Vazio
+                printf(":.`,"); // Vazio
             } else if (blocoAtual == 1) {
-                printf("[C] "); // Reservado para o Caminho Circular do Herói no futuro
+                printf(" #  "); // Reservado para o Caminho Circular do Herói no futuro
             } else if (blocoAtual == 4) {
                 printf("[V] "); // Ex: 4 = Mansão Vampírica
             } else {

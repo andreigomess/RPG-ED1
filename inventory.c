@@ -25,22 +25,46 @@ Inventario* inicializarInventario() {
  * Objetivo: Alocar dinamicamente um novo item e inseri-lo na lista[cite: 106].
  */
 void adicionarItem(Inventario* inv, Item novoItem) {
-    // 1. Criamos a "caixa" (o Nó) que vai guardar o item
+    // 1. Conta quantos itens já estão na mochila atualmente
+    int contador = 0;
+    NoItem* atual = inv->inicio;
+    while (atual != NULL) {
+        contador++;
+        atual = atual->proximo;
+    }
+
+    // 2. Se já existirem 9 itens, removemos o mais antigo (o último da lista)
+    if (contador >= 9) {
+        if (inv->inicio != NULL) {
+            // Caso especial: Só tem 1 item (não deve acontecer aqui, mas protege o código)
+            if (inv->inicio->proximo == NULL) {
+                free(inv->inicio);
+                inv->inicio = NULL;
+            } else {
+                // Caso normal: Percorre até achar o penúltimo e o último nó
+                NoItem* anterior = inv->inicio;
+                NoItem* ultimo = inv->inicio->proximo;
+                
+                while (ultimo->proximo != NULL) {
+                    anterior = ultimo;
+                    ultimo = ultimo->proximo;
+                }
+                
+                printf("\n[!] Mochila cheia! O item antigo '%s' virou poeira...\n", ultimo->dados.nome);
+                free(ultimo);          // Libera a memória do item mais antigo
+                anterior->proximo = NULL; // O penúltimo agora passa a ser o fim da linha
+            }
+        }
+    }
+
+    // 3. Insere o item novo normalmente no início da mochila
     NoItem* novoNo = (NoItem*) malloc(sizeof(NoItem));
-    
     if (novoNo == NULL) {
         printf("Erro ao alocar memoria para um novo item!\n");
         return;
     }
-    
-    // 2. Colocamos o item dentro da caixa
     novoNo->dados = novoItem;
-    
-    // 3. Inserção no início da lista (mais rápido e fácil)
-    // O novo item aponta para quem era o primeiro da lista
     novoNo->proximo = inv->inicio;
-    
-    // Agora o início da lista passa a ser o nosso novo item
     inv->inicio = novoNo;
     
     printf(">> O item '%s' foi adicionado ao inventario!\n", novoItem.nome);

@@ -4,15 +4,30 @@
 #include "game.h"
 
 int main() {
-    srand(time(NULL));
-    printf("Preparando o mundo...\n");
+    // ... (configurações do terminal, se necessário) ...
 
-    // 1. O maestro cria e posiciona todas as estruturas de dados na memória
-    EstadoJogo* meuJogo = inicializarJogo();
+    // Chama a tela de título
+    int escolha = exibirTelaTitulo();
 
-    // 2. O Game Loop assume o controle e a magia acontece
-    iniciarGameLoop(meuJogo);
+    // Se o usuário desistiu no menu (escolheu 0)
+    if (escolha == 0) {
+        return 0; 
+    }
 
-    // 3. O sistema retorna com sucesso
+    // Se chegou aqui, o jogo deve começar
+    EstadoJogo* jogo = inicializarJogo(); //
+
+    // Se a escolha foi carregar (1)
+    if (escolha == 1) {
+        carregarJogo(jogo); // context implies save/load is implemented
+    }
+    // Se foi Novo Jogo, o 'jogo' já está inicializado como padrão
+
+    // Inicia o motor principal
+    iniciarGameLoop(jogo); //
+
+    // Limpa tudo ao fechar
+    destruirJogo(jogo); //
+
     return 0;
 }

@@ -22,6 +22,19 @@ Heroi* inicializarHeroi(MapaCircular* mapa) {
     novoHeroi->vidaAtual = 100;
     novoHeroi->poderAtaque = 12;
 
+    // --- NOVO: Inicia sem nenhum equipamento vestido ---
+    novoHeroi->armaEquipada.tipo = 0; // 0 significa "Slot Vazio"
+    strcpy(novoHeroi->armaEquipada.nome, "Nenhuma");
+
+    novoHeroi->armaduraEquipada.tipo = 0;
+    strcpy(novoHeroi->armaduraEquipada.nome, "Nenhuma");
+
+    novoHeroi->escudoEquipado.tipo = 0;
+    strcpy(novoHeroi->escudoEquipado.nome, "Nenhum");
+
+    novoHeroi->anelEquipado.tipo = 0;
+    strcpy(novoHeroi->anelEquipado.nome, "Nenhum");
+
     // Colocamos o herói no primeiro bloco de verdade (logo após a sentinela)
     novoHeroi->posicaoAtual = mapa->sentinela->proximo;
 
@@ -78,7 +91,7 @@ void desenharMapaComHeroi(Heroi* heroi, MapaCircular* mapa) {
     while (atual != mapa->sentinela) {
         // Se a posição que estamos desenhando for a posição do herói, desenhamos [H]
         if (atual == heroi->posicaoAtual) {
-            printf("[H]-> ");
+            printf(" H -> ");
         } else {
             // Caso contrário, desenhamos o terreno
             if (atual->tipoTerreno == 1) printf("[A]-> "); // Acampamento
