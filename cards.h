@@ -1,44 +1,37 @@
 #ifndef CARDS_H
 #define CARDS_H
 
-#include <stdlib.h>
+// 1. A Estrutura da Carta (Dados do Jogo)
+// Baseado nas cartas listadas no final do seu documento
+typedef struct {
+    char nome[30];
+    int idTerreno;      // Qual terreno ela cria (Ex: 3 para Bosque)
+    int idInimigoGera;  // Qual inimigo ela pode invocar (Ex: Lobo)
+    int curaVida;       // Se for uma carta de recuperação (Ex: Vilarejo)
+} Carta;
 
-/* forward declarations */
-struct Game;
-typedef struct CaminhoNode CaminhoNode;
+// 2. A Estrutura do Nó da Pilha
+// A "caixa" que guarda a carta e aponta para a carta de baixo
+typedef struct NoCarta {
+    Carta dados;
+    struct NoCarta* abaixo; // Em uma pilha, apontamos para o elemento que está "embaixo"
+} NoCarta;
 
-/**
- * Pilha (stack LIFO) de cartas que o jogador usa para modificar o mapa.
- * Implementação baseada em lista encadeada simples com push/pop.
- */
-typedef struct Card {
-    int id;
-    char name[48];
-    int effect_type; /* efeito que altera terreno/spawn/etc. */
-    struct Card *next; /* topo da pilha */
-} Card;
+// 3. A Estrutura Gerenciadora da Pilha
+typedef struct {
+    NoCarta* topo; // O único ponto de acesso de uma pilha é o seu topo!
+} PilhaCartas;
 
-/* Empilha uma carta no topo. */
-void push_card(Card **top, Card *c);
+// Declarações das funções clássicas de uma Pilha (Stack)
+PilhaCartas* inicializarBaralho();
 
-/* Remove e retorna a carta do topo. */
-Card *pop_card(Card **top);
+// "Push" -> Coloca uma nova carta no topo do baralho
+void empilharCarta(PilhaCartas* pilha, Carta novaCarta);
 
-/* Libera toda a pilha de cartas. */
-void cards_free(Card *top);
+// "Pop" -> Tira a carta do topo para ser usada (e libera a memória dela)
+Carta desempilharCarta(PilhaCartas* pilha);
 
-/* Cria uma carta dinamicamente (fábrica simples). */
-Card *card_create(int id, const char *name, int effect_type);
+// "Peek" -> Apenas olha qual é a carta do topo sem tirar ela de lá
+void exibirTopo(PilhaCartas* pilha);
 
-/* Conta quantas cartas estão na pilha. */
-size_t cards_count(Card *top);
-
-/* Aplica a carta `c` sobre o nó `node` do mapa usando o estado `g`.
- * Exemplos de efeitos (effect_type):
- * 1 = spawn enemy
- * 2 = remove enemy
- * 3 = toggle terrain (increment)
- */
-void card_apply(struct Game *g, Card *c, CaminhoNode *node);
-
-#endif /* CARDS_H */
+#endif // CARDS_H

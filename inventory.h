@@ -1,33 +1,42 @@
 #ifndef INVENTORY_H
 #define INVENTORY_H
 
-#include <stdlib.h>
+// Enumeração (Enum) para facilitar a leitura do tipo de item
+// Em vez de usar números soltos, podemos usar a palavra "ARMA", "ARMADURA", etc.
+typedef enum {
+    ARMA = 1,
+    ARMADURA = 2,
+    ESCUDO = 3,
+    ANEL = 4,
+    CONSUMIVEL = 5
+} TipoItem;
 
-/**
- * Item em lista simples encadeada representando o inventário/equipamentos.
- * Lista simples (singly-linked) para inserção/remoção dinâmica.
- */
-typedef struct Item {
-    int id;
-    char name[48];
-    int type; /* 0 = consumível, 1 = arma, 2 = armadura, etc. */
-    int atk_bonus;
-    int def_bonus;
-    struct Item *next;
+// 1. Estrutura com os dados reais do equipamento
+typedef struct {
+    char nome[30];
+    TipoItem tipo;
+    int valorAtributo; // Ex: +10 de ataque se for arma, +5 de defesa se for armadura
 } Item;
 
-/* Adiciona um item ao início da lista (retorna novo head). */
-Item *inventory_add(Item *head, Item *it);
+// 2. Estrutura do Nó da Lista Simples Encadeada
+// Esta é a "caixa" que guarda o item e aponta para o próximo
+typedef struct NoItem {
+    Item dados;              // A "carga" (o item em si)
+    struct NoItem* proximo;  // O ponteiro que liga ao próximo nó da lista
+} NoItem;
 
-/* Remove o primeiro item com `id` e retorna o head atualizado. */
-Item *inventory_remove(Item *head, int id);
+// 3. Estrutura principal do Inventário
+// Diferente da lista circular, aqui só precisamos saber onde a lista começa
+typedef struct {
+    NoItem* inicio; // Aponta para o primeiro item da mochila
+} Inventario;
 
-/* Libera todos os itens da lista. */
-void inventory_free(Item *head);
+// Declarações das funções que vamos criar
+Inventario* inicializarInventario();
+void adicionarItem(Inventario* inv, Item novoItem);
+void exibirInventario(Inventario* inv);
 
-/* Cria um item dinamicamente. Caller deve adicionar com inventory_add
- * Exemplo simples de fábrica de item para drops.
- */
-Item *item_create(int id, const char *name, int type, int atk_bonus, int def_bonus);
+// E aqui está a função que resolve sua pergunta sobre liberar memória!
+void descartarItem(Inventario* inv, const char* nomeDoItemParaDescartar);
 
-#endif /* INVENTORY_H */
+#endif // INVENTORY_H

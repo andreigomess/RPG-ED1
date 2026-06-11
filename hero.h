@@ -1,30 +1,29 @@
 #ifndef HERO_H
 #define HERO_H
 
-#include <stdint.h>
+#include "inventory.h"
 
-/* O herói possui atributos básicos e ponteiros para equipamentos/inventário
- * (representados como lista simples de `Item`, definida em `inventory.h`).
- */
-typedef struct Hero {
-    char name[32];
-    int level;
-    int exp;
-    int hp;
-    int max_hp;
-    int atk;
-    int def;
-    /* Ponteiros para estruturas externas (forward declarations em tempo de uso) */
-    void *equipped_head; /* ponteiro genérico para lista de equipamentos (Item*) */
-} Hero;
+#include "map.h" // Precisamos incluir o mapa para usar o NoMapa
 
-/* Cria e inicializa um herói padrão. */
-Hero *hero_create(const char *name);
+// Estrutura que representa o jogador
+typedef struct {
+    char nome[30];
+    int vidaMaxima;
+    int vidaAtual;
+    int poderAtaque;
 
-/* Desaloca o herói e quaisquer estruturas associadas. */
-void hero_free(Hero *h);
+    Item armaEquipada;
+    Item armaduraEquipada;
+    Item escudoEquipado;
+    Item anelEquipado;
+    
+    // Ponteiro crucial: guarda a posição exata do herói na Lista Circular
+    NoMapa* posicaoAtual; 
+} Heroi;
 
-/* Processa efeitos passivos do herói por tick (ex: regeneração). */
-void hero_tick(Hero *h);
+// Declarações das funções
+Heroi* inicializarHeroi(MapaCircular* mapa);
+void moverHeroi(Heroi* heroi, MapaCircular* mapa);
+void desenharMapaComHeroi(Heroi* heroi, MapaCircular* mapa);
 
-#endif /* HERO_H */
+#endif // HERO_H

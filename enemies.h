@@ -1,28 +1,39 @@
 #ifndef ENEMIES_H
 #define ENEMIES_H
 
-#include <stdlib.h>
+// 1. A Estrutura do Inimigo (Dados do Jogo)
+// O sistema de combate precisa de atributos para calcular o dano e a vida [cite: 536]
+typedef struct {
+    char nome[30];
+    int vidaMaxima;
+    int vidaAtual;
+    int poderAtaque;
+} Inimigo;
 
-/**
- * Estrutura básica de inimigo. Pode ser mantida em listas simples ou usadas
- * por nós da pista (CaminhoNode).
- */
-typedef struct Enemy {
-    int id;
-    char name[48];
-    int hp;
-    int atk;
-    int def;
-    struct Enemy *next; /* para listas simples de pooling */
-} Enemy;
+// 2. A Estrutura do Nó da Fila
+// A "caixa" que guarda o inimigo na fila de espera e aponta para o de trás
+typedef struct NoFila {
+    Inimigo dados;
+    struct NoFila* proximo; 
+} NoFila;
 
-/* Cria um inimigo com parâmetros básicos. */
-Enemy *enemy_create(int id, const char *name, int hp, int atk, int def);
+// 3. A Estrutura Gerenciadora da Fila (FIFO)
+// Controla a ordem de inimigos e eventos com eficiência [cite: 159, 160]
+typedef struct {
+    NoFila* inicio; // De onde tiramos o inimigo para colocá-lo no mapa (Dequeue)
+    NoFila* fim;    // Onde inserimos o novo inimigo que acabou de ser gerado (Enqueue)
+} FilaInimigos;
 
-/* Libera um inimigo (e possivelmente sua sub-estrutura). */
-void enemy_free(Enemy *e);
+// Declarações das funções da Fila Dinâmica
+FilaInimigos* inicializarFila();
 
-/* Função utilitária: gera um inimigo aleatório básico (stub). */
-Enemy *enemy_generate_random(void);
+// "Enqueue" -> Coloca um inimigo no final da fila de espera
+void enfileirarInimigo(FilaInimigos* fila, Inimigo novoInimigo);
 
-#endif /* ENEMIES_H */
+// "Dequeue" -> Tira o primeiro inimigo da fila para processá-lo e colocá-lo no jogo
+Inimigo desenfileirarInimigo(FilaInimigos* fila);
+
+// Exibe quem está esperando na fila (útil para testes e depuração)
+void exibirFila(FilaInimigos* fila);
+
+#endif // ENEMIES_H

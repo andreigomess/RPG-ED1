@@ -1,25 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "game.h"
 
-int main(void) {
-    Game *g = game_create();
-    if (!g) {
-        fprintf(stderr, "Falha ao inicializar jogo\n");
-        return 1;
-    }
+int main() {
+    srand(time(NULL));
+    printf("Preparando o mundo...\n");
 
-    printf("Herói em Loop - implementação inicial\n");
-    printf("Comandos: 'q' quit, 'i' inventário (press Enter)\n");
+    // 1. O maestro cria e posiciona todas as estruturas de dados na memória
+    EstadoJogo* meuJogo = inicializarJogo();
 
-    while (g->running) {
-        game_input(g);
-        game_update(g);
-        game_render(g);
-    }
+    // 2. O Game Loop assume o controle e a magia acontece
+    iniciarGameLoop(meuJogo);
 
-    printf("Encerrando jogo. Liberando recursos...\n");
-    game_destroy(g);
+    // 3. O sistema retorna com sucesso
+    destruirJogo(meuJogo);
     return 0;
 }
-

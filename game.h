@@ -1,54 +1,65 @@
 #ifndef GAME_H
 #define GAME_H
+#include <string.h>
+#include "hero.h"
+#include "map.h"
+#include "inventory.h"
+#include "cards.h"
+#include "enemies.h"
+#include "scenario.h"
+#include "combat.h"
 
-#include <stdint.h>
+// Definições de Cores ANSI
+#define ANSI_RESET   "\x1b[0m"
+#define ANSI_VERDE   "\x1b[32m"
+#define ANSI_MAGENTA "\x1b[35m" // Vamos usar para o Pântano (Roxo/Magenta)
+#define ANSI_AMARELO "\x1b[33m" // Para o Acampamento/Fogueira
+#define ANSI_CIANO   "\x1b[36m" // Para o Herói
+#define ANSI_BRANCO_BRILHANTE "\x1b[97m"
+#define ANSI_CINZA   "\x1b[90m" // Para o Caminho de Terra
+#define ANSI_VERMELHO "\x1b[31m" // Para Alertas e Perigo
 
-/* Tamanhos da matriz estática que representa o entorno da pista */
-#define MAP_MATRIX_ROWS 5
-#define MAP_MATRIX_COLS 5
+// Estrutura limpa, sem ponteiros, otimizada para gravação em disco
+typedef struct {
+    char nome[30];
+    int vidaMaxima;
+    int vidaAtual;
+    int poderAtaque;
+    
+    Item armaEquipada;
+    Item armaduraEquipada;
+    Item escudoEquipado;
+    Item anelEquipado;
 
-/* Encaminhamentos para estruturas definidas em outros módulos */
-struct Hero;
-struct CaminhoNode;
-struct Card;
-struct Item;
-struct Queue;
-struct Enemy;
+    int voltasCompletas;
 
-/**
- * Estrutura central que reúne o estado global do jogo.
- * Contém ponteiros para as principais estruturas (herói, mapa, pilha de cartas,
- * inventário, fila de combate, etc.).
- */
-typedef struct Game {
-    struct Hero *hero;
-    struct CaminhoNode *map_sentinel; /* lista circular com sentinela */
-    struct CaminhoNode *hero_pos;     /* posição atual do herói na pista */
-    struct Card *card_stack;          /* pilha LIFO */
-    struct Item *inventory_head;      /* lista encadeada simples */
-    struct Queue *combat_queue;       /* fila circular para turnos */
-    struct Enemy *enemy_pool;         /* lista/simple apontador para gerados */
-    int mapa_matrix[MAP_MATRIX_ROWS][MAP_MATRIX_COLS]; /* representação 2D estática */
-    int running; /* flag para while(jogo_rodando) */
-} Game;
+    int qtdItensMochila;
+    Item itensMochila[9]; // Garante o limite máximo de 9 espaços no arquivo
+} DadosSave;
 
-/* Inicializa o estado mínimo do jogo (aloca estruturas se necessário).
- * Deve ser chamada antes de entrar no loop principal.
- */
-Game *game_create(void);
+// A super-estrutura que guarda o estado atual de todo o universo do jogo
+typedef struct {
+    Heroi* heroi;
+    MapaCircular* mapa;
+    Inventario* mochila;
+    PilhaCartas* baralho;
+    FilaInimigos* filaInimigos;
+    MatrizCenario* cenario;
+    int jogoRodando; // 1 = Rodando, 0 = Fim de Jogo (Game Over ou Vitória)
+    int voltasCompletas; // Contador de quantas vezes o herói deu a volta completa no mapa
+} EstadoJogo;
 
-/* Libera todos os recursos associados ao `Game` de forma segura.
- * Implementar para evitar memory leaks ao encerrar o jogo.
- */
-void game_destroy(Game *g);
+// Funções de Gerenciamento do Jogo
+EstadoJogo* inicializarJogo();
+void destruirJogo(EstadoJogo* jogo); // Importante para liberar toda a memória no final!
 
-/* Funções de ciclo, serão implementadas posteriormente:
- * - game_input: processa entrada do jogador
- * - game_update: atualiza estado (movimento, spawns, combate automático)
- * - game_render: imprime estado no terminal
- */
-void game_input(Game *g);
-void game_update(Game *g);
-void game_render(Game *g);
+// O Game Loop e suas 3 fases
+void iniciarGameLoop(EstadoJogo* jogo);
+void processarInput(EstadoJogo* jogo);
+void atualizarLogica(EstadoJogo* jogo);
+void renderizarTela(EstadoJogo* jogo);
 
-#endif /* GAME_H */
+void salvarJogo(EstadoJogo* jogo);
+void carregarJogo(EstadoJogo* jogo);
+
+#endif // GAME_H
