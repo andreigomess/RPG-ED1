@@ -1,10 +1,67 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <unistd.h>
-#include <termios.h>
-#include <fcntl.h>
 #include "game.h"
+
+// === DETECÇÃO DE SISTEMA OPERACIONAL ===
+#ifdef _WIN32
+    // Se estiver no Windows, usa isso:
+    #include <conio.h>
+    #include <windows.h>
+
+    int lerTecla() {
+        if (_kbhit()) {
+            return _getch(); // Lê a tecla sem pausar
+        }
+        return -1;
+    }
+
+    int lerTeclaMenu() {
+        return _getch(); // Pausa esperando a tecla
+    }
+
+    void dormir(int segundos) {
+        Sleep(segundos * 1000); // No Windows, Sleep é em milissegundos e com 'S' maiúsculo
+    }
+
+#else
+    // Se estiver no Linux/Codespaces/Mac, usa o que tínhamos antes:
+    #include <termios.h>
+    #include <unistd.h>
+    #include <fcntl.h>
+
+    int lerTecla() {
+        struct termios oldt, newt;
+        int ch;
+        int oldf;
+        tcgetattr(STDIN_FILENO, &oldt);
+        newt = oldt;
+        newt.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+        oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+        fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+        ch = getchar();
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+        fcntl(STDIN_FILENO, F_SETFL, oldf);
+        return ch;
+    }
+
+    int lerTeclaMenu() {
+        struct termios oldt, newt;
+        int ch;
+        tcgetattr(STDIN_FILENO, &oldt);
+        newt = oldt;
+        newt.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+        ch = getchar();
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+        return ch;
+    }
+
+    void dormir(int segundos) {
+        sleep(segundos); // No Linux, sleep é com 's' minúsculo
+    }
+#endif
 
 /*
  * Função: inicializarJogo
@@ -15,49 +72,6 @@
     system("clear");
 }
 
-int lerTecla() {
-    struct termios oldt, newt;
-    int ch;
-    int oldf;
-
-    // Salva as configurações normais do terminal
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    
-    // Desliga o modo canônico (exigir ENTER) e o echo (imprimir a letra)
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-    
-    // Liga o modo "não-bloqueante"
-    oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
-    fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
-
-    ch = getchar();
-
-    // Devolve o terminal ao normal para que os menus funcionem depois
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    fcntl(STDIN_FILENO, F_SETFL, oldf);
-
-    return ch;
-}
-
-// Lê uma única tecla instantaneamente e congela o jogo até você apertar
-int lerTeclaMenu() {
-    struct termios oldt, newt;
-    int ch;
-    
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    // Desliga o modo de exigir ENTER, mas MANTÉM a função bloqueante
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-    
-    ch = getchar(); // Fica travado aqui até alguma tecla ser pressionada
-    
-    // Devolve o terminal ao normal
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    return ch;
-}
 
 EstadoJogo* inicializarJogo() {
     
@@ -688,7 +702,7 @@ void iniciarGameLoop(EstadoJogo* jogo) {
             
             // 4. O jogo dorme por 1 segundo, permitindo que você leia o que aconteceu 
             // e dando o ritmo do Loop Hero
-            sleep(1); 
+            dormir(1);
         }
     }
 }
